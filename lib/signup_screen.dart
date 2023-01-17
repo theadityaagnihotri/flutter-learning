@@ -1,4 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_signin/home_screen.dart';
+import 'package:google_signin/models/user_model.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -9,6 +15,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _auth = FirebaseAuth.instance;
   final firstNameEditingController = new TextEditingController();
   final lastNameEditingController = new TextEditingController();
   final emailNameEditingController = new TextEditingController();
@@ -21,7 +28,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       controller: firstNameEditingController,
       keyboardType: TextInputType.name,
-      //validator: () {},
+      validator: (value) {
+        RegExp regex = new RegExp(r'^.{3,}$');
+        if (value!.isEmpty) {
+          return "First Name is required.";
+        }
+        if (!regex.hasMatch(value)) {
+          return ("Min. 6 characters.");
+        }
+        return null;
+      },
       onSaved: (newValue) {
         firstNameEditingController.text = newValue!;
       },
@@ -40,7 +56,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       controller: lastNameEditingController,
       keyboardType: TextInputType.name,
-      //validator: () {},
+      validator: (value) {
+        RegExp regex = new RegExp(r'^.{3,}$');
+        if (value!.isEmpty) {
+          return "First Name is required.";
+        }
+        return null;
+      },
       onSaved: (newValue) {
         lastNameEditingController.text = newValue!;
       },
@@ -59,7 +81,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       controller: emailNameEditingController,
       keyboardType: TextInputType.emailAddress,
-      //validator: () {},
+      validator: (value) {
+        if (value!.isEmpty) {
+          return "Please enter an email";
+        }
+
+        if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-zA-Z]")
+            .hasMatch(value)) {
+          return "Please enter a valid email.";
+        }
+        return null;
+      },
       onSaved: (newValue) {
         emailNameEditingController.text = newValue!;
       },
@@ -78,8 +110,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       controller: passwordNameEditingController,
       obscureText: true,
-
-      //validator: () {},
+      validator: (value) {
+        RegExp regex = new RegExp(r'^.{6,}$');
+        if (value!.isEmpty) {
+          return "Password is required.";
+        }
+        if (!regex.hasMatch(value)) {
+          return ("Enter valid password(Min. 6 characters).");
+        }
+      },
       onSaved: (newValue) {
         passwordNameEditingController.text = newValue!;
       },
@@ -98,8 +137,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       autofocus: false,
       controller: confirmPasswordEditingController,
       obscureText: true,
-
-      //validator: () {},
+      validator: (value) {
+        if (passwordNameEditingController.text !=
+            confirmPasswordEditingController.text) {
+          return ("Password don't match.");
+        }
+        return null;
+      },
       onSaved: (newValue) {
         passwordNameEditingController.text = newValue!;
       },
@@ -121,7 +165,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: MaterialButton(
         padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
         minWidth: MediaQuery.of(context).size.width,
-        onPressed: () {},
+        onPressed: () {
+          signUp(emailNameEditingController.text,
+              passwordNameEditingController.text);
+        },
         child: Text(
           "SignUp",
           textAlign: TextAlign.center,
@@ -196,5 +243,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+  }
+
+  void signUp(String email, String password) async {
+    if (_formKey.currentState!.validate()) {
+      await _auth
+          .createUserWithEmailAndPassword(email: email, password: password)
+          .then((value) => {
+                postDetailsToFirestore(),
+              })
+          .catchError((e) {
+        Fluttertoast.showToast(msg: e!.message);
+      });
+    }
+  }
+
+  postDetailsToFirestore() async {
+    //calling firestore
+    //calling our user model
+    //sending these values
+
+    FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
+    User? user = _auth.currentUser;
+    UserModel userModel = UserModel();
+
+    userModel.email = user!.email;
+    userModel.uid = user!.uid;
+    userModel.firstName = firstNameEditingController.text;
+    userModel.secondName = lastNameEditingController.text;
+
+    await firebaseFirestore
+        .collection("users")
+        .doc(user.uid)
+        .set(userModel.toMap());
+    Fluttertoast.showToast(msg: "Account Created Successfully!!!");
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+        (route) => false);
   }
 }
