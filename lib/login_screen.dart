@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_signin/home_screen.dart';
 import 'package:google_signin/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formkey = GlobalKey<FormState>();
-
+  final _auth = FirebaseAuth.instance;
   final TextEditingController emailcontroller = new TextEditingController();
   final TextEditingController passwordcontroller = new TextEditingController();
   @override
@@ -19,7 +22,17 @@ class _LoginScreenState extends State<LoginScreen> {
       autofocus: false,
       controller: emailcontroller,
       keyboardType: TextInputType.emailAddress,
-      //validator: () {},
+      validator: (value) {
+        if (value!.isEmpty) {
+          return "Please enter an email";
+        }
+
+        if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-zA-Z]")
+            .hasMatch(value)) {
+          return "Please enter a valid email.";
+        }
+        return null;
+      },
       onSaved: (newValue) {
         emailcontroller.text = newValue!;
       },
@@ -38,8 +51,15 @@ class _LoginScreenState extends State<LoginScreen> {
       autofocus: false,
       controller: passwordcontroller,
       obscureText: true,
-
-      //validator: () {},
+      validator: (value) {
+        RegExp regex = new RegExp(r'^.{6,}$');
+        if (value!.isEmpty) {
+          return "Password is required.";
+        }
+        if (!regex.hasMatch(value)) {
+          return ("Enter valid password(Min. 6 characters).");
+        }
+      },
       onSaved: (newValue) {
         passwordcontroller.text = newValue!;
       },
@@ -61,7 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: MaterialButton(
         padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
         minWidth: MediaQuery.of(context).size.width,
-        onPressed: () {},
+        onPressed: () {
+          signin(context, emailcontroller.text, passwordcontroller.text);
+        },
         child: Text(
           "Login",
           textAlign: TextAlign.center,
@@ -70,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -135,5 +158,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void signin(BuildContext context, String email, String password) async {
+    if (_formkey.currentState!.validate()) {
+      await _auth
+          .signInWithEmailAndPassword(email: email, password: password)
+          .then((uid) => {
+                Fluttertoast.showToast(msg: "Login Successful"),
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => const HomeScreen())),
+              })
+          .catchError((e) {
+        Fluttertoast.showToast(msg: e!.message);
+      });
+    }
   }
 }

@@ -113,7 +113,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+
+    final signUpButton = Material(
+      elevation: 5,
+      borderRadius: BorderRadius.circular(30),
+      color: Color.fromARGB(255, 3, 87, 244),
+      child: MaterialButton(
+        padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+        minWidth: MediaQuery.of(context).size.width,
+        onPressed: () {},
+        child: Text(
+          "SignUp",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Color.fromARGB(255, 3, 87, 244),
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
       backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
@@ -157,6 +187,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     SizedBox(
                       height: 15,
                     ),
+                    signUpButton,
                   ],
                 ),
               ),
